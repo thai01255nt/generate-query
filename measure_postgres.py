@@ -11,7 +11,7 @@ TYPE_DB = 'postgres'
 conn = psycopg2.connect(
     "dbname=measure user=postgres password=mysecretpassword host=localhost port=5431")
 cur = conn.cursor()
-raw_order, order_wh, profile_wh = load_data()
+raw_profile, raw_order, profile_wh, order_wh = load_data()
 
 insert_raw_order_query, insert_order_wh_query, insert_profile_wh_query = \
     generate_insert_query(raw_order=raw_order, order_wh=order_wh,
@@ -144,9 +144,3 @@ output = {
 with open(f'/home/thai0125nt/Desktop/rudder-sdk-python/{TYPE_DB}/summary_join.json',
           'w') as json_file:
     json.dump(output, json_file)
-
-'''
-
-    
-
-'''

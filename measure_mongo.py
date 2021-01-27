@@ -12,7 +12,7 @@ client = MongoClient("mongodb://127.0.0.1:27017")
 
 db_measure = client.dbMeasure
 # Load data
-raw_order, order_wh, profile_wh = load_data()
+raw_profile, raw_order, profile_wh, order_wh = load_data()
 
 
 class Measure():

@@ -7,6 +7,7 @@ import threading
 import numpy as np
 from pymongo import MongoClient
 
+
 def load_data():
     client = MongoClient("mongodb://127.0.0.1:27017")
 
@@ -37,5 +38,4 @@ def load_data():
         if 'cdpId' not in c.keys():
             c['cdpId'] = 1
         order_wh.append(c)
-    return raw_order,order_wh,profile_wh
-
+    return raw_profile, raw_order, profile_wh, order_wh
