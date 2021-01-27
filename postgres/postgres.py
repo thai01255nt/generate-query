@@ -1,8 +1,5 @@
-import psycopg2
 import bson
 import json
-
-
 
 
 def get_type(value):
@@ -11,12 +8,12 @@ def get_type(value):
     if isinstance(value, dict):
         return 'JSON'
     if isinstance(value, int):
-        return 'INTERGER'
+        return 'INTEGER'
     if isinstance(value, float):
         return 'FLOAT'
 
 
-def generatInsertProfileSql(data, table_name):
+def generatInsertSql(data, table_name):
     full_field = {}
     for _data in data:
         for key in _data.keys():
@@ -49,5 +46,28 @@ def generatInsertProfileSql(data, table_name):
         sql += f'INSERT INTO {table_name}({list_key}) VALUES ({list_value}); '
     return sql
 
-def insert_many(raw_order,order_wh,profile_wh):
-    
+
+def generate_insert_query(raw_order, order_wh, profile_wh):
+    insert_raw_order_query = generatInsertSql(raw_order, 'rawOrder')
+    insert_order_wh_query = generatInsertSql(order_wh, 'orderWH')
+    insert_profile_wh_query = generatInsertSql(profile_wh, 'profileWH')
+    return insert_raw_order_query, insert_order_wh_query, insert_profile_wh_query
+
+
+def generate_join_query():
+    sql = '''
+        INSERT INTO orderWH (email,value,cdpId)
+        SELECT
+                    email,
+                    value,
+                    cdpId
+            FROM rawOrder td1
+            LEFT JOIN (
+                SELECT DISTINCT
+                    MAX(id) as cdpId,
+                    email as email_mapping_workspace
+                FROM profileWH
+                GROUP BY email
+            )td2 ON td1.email = td2.email_mapping_workspace 
+    '''
+    return sql

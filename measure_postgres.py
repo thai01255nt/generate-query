@@ -1,41 +1,23 @@
-import os
 import json
-import glob
 import time
 import psutil
 import threading
 import numpy as np
 import psycopg2
-from pymongo import MongoClient
+from load_data import load_data
+from postgres import generate_insert_query, generate_join_query
 
+TYPE_DB = 'postgres'
 conn = psycopg2.connect(
     "dbname=measure user=postgres password=mysecretpassword host=localhost port=5431")
-client = MongoClient("mongodb://127.0.0.1:27017")
-db_measure = client.dbMeasure
-# Load data
-cursor = db_measure.rawProfile.find({})
-raw_profile = []
-for c in cursor:
-    c.pop('_id')
-    raw_profile.append(c)
+cur = conn.cursor()
+raw_order, order_wh, profile_wh = load_data()
 
-raw_order = []
-cursor = db_measure.rawOrder.find({})
-for c in cursor:
-    c.pop('_id')
-    raw_order.append(c)
+insert_raw_order_query, insert_order_wh_query, insert_profile_wh_query = \
+    generate_insert_query(raw_order=raw_order, order_wh=order_wh,
+                          profile_wh=profile_wh)
+join_query = generate_join_query()
 
-profile_wh = []
-cursor = db_measure.profileWH.find({})
-for c in cursor:
-    c.pop('_id')
-    profile_wh.append(c)
-
-order_wh = []
-cursor = db_measure.orderWH.find({})
-for c in cursor:
-    c.pop('_id')
-    order_wh.append(c)
 
 class Measure():
     def __init__(self, start_cpu, start_memory):
@@ -54,7 +36,6 @@ class Measure():
         return
 
 
-
 time.sleep(10)
 print('''
 START MEASURE
@@ -69,7 +50,12 @@ t1.start()
 
 # ======================
 # Add your data function
-
+cur.execute(insert_raw_order_query)
+conn.commit()
+cur.execute(insert_order_wh_query)
+conn.commit()
+cur.execute(insert_profile_wh_query)
+conn.commit()
 # ======================
 
 end_time = time.time()
@@ -87,13 +73,13 @@ measure.memory = np.clip(np.array(measure.memory) - measure.start_memory, 0,
 # Create a new figure, plot into it, then close it so it never gets displayed
 fig = plt.figure()
 plt.plot(measure.cpu)
-plt.savefig('/home/thai0125nt/Desktop/rudder-sdk-python/mongo/cpu_insert.png')
+plt.savefig(f'/home/thai0125nt/Desktop/rudder-sdk-python/{TYPE_DB}/cpu_insert.png')
 plt.close(fig)
 
 plt.figure()
 plt.plot(measure.memory)
 plt.savefig(
-    '/home/thai0125nt/Desktop/rudder-sdk-python/mongo/memory_insert.png')
+    f'/home/thai0125nt/Desktop/rudder-sdk-python/{TYPE_DB}/memory_insert.png')
 plt.close(fig)
 
 output = {
@@ -102,11 +88,10 @@ output = {
     'total_time': measure.total_time
 }
 
-with open('/home/thai0125nt/Desktop/rudder-sdk-python/mongo/summary_insert.json', 'w') as json_file:
+with open(
+        f'/home/thai0125nt/Desktop/rudder-sdk-python/{TYPE_DB}/summary_insert.json',
+        'w') as json_file:
     json.dump(output, json_file)
-
-
-
 
 time.sleep(10)
 print('''
@@ -122,7 +107,8 @@ t1.start()
 
 # ======================
 # Add your data function
-
+cur.execute(join_query)
+conn.commit()
 # ======================
 
 end_time = time.time()
@@ -140,13 +126,13 @@ measure.memory = np.clip(np.array(measure.memory) - measure.start_memory, 0,
 # Create a new figure, plot into it, then close it so it never gets displayed
 fig = plt.figure()
 plt.plot(measure.cpu)
-plt.savefig('/home/thai0125nt/Desktop/rudder-sdk-python/mongo/cpu_join.png')
+plt.savefig(f'/home/thai0125nt/Desktop/rudder-sdk-python/{TYPE_DB}/cpu_join.png')
 plt.close(fig)
 
 plt.figure()
 plt.plot(measure.memory)
 plt.savefig(
-    '/home/thai0125nt/Desktop/rudder-sdk-python/mongo/memory_join.png')
+    f'/home/thai0125nt/Desktop/rudder-sdk-python/{TYPE_DB}/memory_join.png')
 plt.close(fig)
 
 output = {
@@ -155,6 +141,12 @@ output = {
     'total_time': measure.total_time
 }
 
-with open('/home/thai0125nt/Desktop/rudder-sdk-python/mongo/summary_join.json', 'w') as json_file:
+with open(f'/home/thai0125nt/Desktop/rudder-sdk-python/{TYPE_DB}/summary_join.json',
+          'w') as json_file:
     json.dump(output, json_file)
 
+'''
+
+    
+
+'''
